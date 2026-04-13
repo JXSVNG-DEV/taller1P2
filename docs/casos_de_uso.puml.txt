@@ -1,0 +1,90 @@
+@startuml CasosDeUso_SistemaBancario
+
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+
+actor "Cajero" as CAJ
+actor "Asesor Financiero" as ASE
+actor "Gerente de Sucursal" as GER
+actor "Cliente" as CLI
+actor "Sistema Auditor" as AUD
+
+rectangle "Sistema de Gestión Bancaria" {
+
+    package "Gestión de Clientes" {
+        usecase "Registrar cliente natural" as UC01
+        usecase "Registrar cliente empresarial" as UC02
+        usecase "Buscar cliente" as UC03
+        usecase "Consultar historial de transacciones" as UC04
+    }
+
+    package "Gestión de Cuentas" {
+        usecase "Abrir cuenta de ahorros" as UC05
+        usecase "Abrir cuenta corriente" as UC06
+        usecase "Abrir cuenta crédito" as UC07
+        usecase "Bloquear cuenta" as UC08
+        usecase "Desbloquear cuenta" as UC09
+        usecase "Calcular intereses mensuales" as UC10
+    }
+
+    package "Gestión de Transacciones" {
+        usecase "Realizar depósito" as UC11
+        usecase "Realizar retiro" as UC12
+        usecase "Realizar transferencia" as UC13
+        usecase "Cambiar estado de transacción" as UC14
+        usecase "Generar comprobante" as UC15
+    }
+
+    package "Gestión de Personal" {
+        usecase "Registrar cajero" as UC16
+        usecase "Registrar asesor financiero" as UC17
+        usecase "Registrar gerente" as UC18
+        usecase "Calcular nómina total" as UC19
+        usecase "Aprobar crédito" as UC20
+    }
+
+    package "Notificaciones y Auditoría" {
+        usecase "Notificar al cliente" as UC21
+        usecase "Registrar modificación" as UC22
+        usecase "Consultar historial de cambios" as UC23
+    }
+}
+
+CAJ --> UC01
+CAJ --> UC02
+CAJ --> UC03
+CAJ --> UC05
+CAJ --> UC06
+CAJ --> UC11
+CAJ --> UC12
+CAJ --> UC16
+
+ASE --> UC03
+ASE --> UC04
+ASE --> UC08
+ASE --> UC09
+ASE --> UC13
+ASE --> UC14
+ASE --> UC17
+
+GER --> UC07
+GER --> UC18
+GER --> UC19
+GER --> UC20
+
+UC11 ..> UC21 : <<include>>
+UC12 ..> UC21 : <<include>>
+UC13 ..> UC21 : <<include>>
+UC01 ..> UC22 : <<include>>
+UC02 ..> UC22 : <<include>>
+UC05 ..> UC22 : <<include>>
+
+CLI <-- UC21
+AUD --> UC23
+AUD --> UC04
+
+UC10 ..> UC15 : <<extend>>
+UC20 ..> UC07 : <<extend>>
+
+@enduml

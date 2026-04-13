@@ -4,87 +4,70 @@
  */
 package modelo.abstractas;
 
+
 import java.time.LocalDate;
 import java.time.Period;
-
+import modelo.excepciones.DatoInvalidoException;
 
 public abstract class Empleado extends Persona {
-    
-     
-    private int legajo;
+    private String legajo;
     private LocalDate fechaContratacion;
     private double salarioBase;
     private boolean activo;
 
-    
-    public Empleado(int id, String nombre, String apellido, LocalDate fechaNacimiento, String email,
-                    int legajo, LocalDate fechaContratacion, double salarioBase, boolean activo) {
-        
+    public Empleado(String id, String nombre, String apellido, LocalDate fechaNacimiento,
+                    String email, String legajo, LocalDate fechaContratacion, double salarioBase) {
         super(id, nombre, apellido, fechaNacimiento, email);
-        this.legajo = legajo;
-        this.fechaContratacion = fechaContratacion;
-        this.salarioBase = salarioBase;
-        this.activo = activo;
+        setLegajo(legajo);
+        setFechaContratacion(fechaContratacion);
+        setSalarioBase(salarioBase);
+        this.activo = true;
     }
-    
-    
-    
-    public abstract double calcularSalario();
 
-    
-    public int antiguedad() {
+    // Métodos abstractos
+    public abstract double calcularSalario();
+    public abstract double calcularBono();
+
+    // Método concreto heredable
+    public int calcularAntigüedad() {
         return Period.between(fechaContratacion, LocalDate.now()).getYears();
     }
 
-    
+    // Implementación de métodos abstractos de Persona
     @Override
     public int calcularEdad() {
         return Period.between(getFechaNacimiento(), LocalDate.now()).getYears();
     }
 
-    @Override
-    public String obtenerTipo() {
-        return "Empleado";
-    }
+    // Getters
+    public String getLegajo() { return legajo; }
+    public LocalDate getFechaContratacion() { return fechaContratacion; }
+    public double getSalarioBase() { return salarioBase; }
+    public boolean isActivo() { return activo; }
 
-    
-    public int getLegajo() {
-        return legajo;
-    }
-
-    public void setLegajo(int legajo) {
+    // Setters con validación
+    public void setLegajo(String legajo) {
+        if (legajo == null || legajo.trim().isEmpty()) {
+            throw new DatoInvalidoException("legajo", legajo);
+        }
         this.legajo = legajo;
     }
 
-    public LocalDate getFechaContratacion() {
-        return fechaContratacion;
-    }
-
     public void setFechaContratacion(LocalDate fechaContratacion) {
+        if (fechaContratacion == null || fechaContratacion.isAfter(LocalDate.now())) {
+            throw new DatoInvalidoException("fechaContratacion", fechaContratacion);
+        }
         this.fechaContratacion = fechaContratacion;
     }
 
-    public double getSalarioBase() {
-        return salarioBase;
-    }
-
     public void setSalarioBase(double salarioBase) {
-        if (salarioBase > 0) {
-            this.salarioBase = salarioBase;
+        if (salarioBase <= 0) {
+            throw new DatoInvalidoException("salarioBase", salarioBase);
         }
-    }
-
-    public boolean isActivo() {
-        return activo;
+        this.salarioBase = salarioBase;
     }
 
     public void setActivo(boolean activo) {
         this.activo = activo;
     }
-
-    
-    
-    
-    
-    
 }

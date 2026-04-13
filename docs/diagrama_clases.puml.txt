@@ -1,0 +1,271 @@
+@startuml DiagramaClases_SistemaBancario
+
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+skinparam packageStyle rectangle
+
+package "modelo.interfaces" {
+    interface Consultable {
+        + obtenerResumen(): String
+        + estaActivo(): boolean
+        + obtenerTipo(): String
+    }
+    interface Transaccionable {
+        + depositar(monto: double): void
+        + retirar(monto: double): void
+        + calcularComision(monto: double): double
+        + consultarSaldo(): double
+    }
+    interface Auditable {
+        + obtenerFechaCreacion(): LocalDateTime
+        + obtenerUltimaModificacion(): LocalDateTime
+        + obtenerUsuarioModificacion(): String
+        + registrarModificacion(usuario: String): void
+    }
+    interface Notificable {
+        + notificar(mensaje: String): void
+        + obtenerContacto(): String
+        + aceptaNotificaciones(): boolean
+    }
+}
+
+package "modelo.enums" {
+    enum EstadoTransaccion {
+        PENDIENTE
+        PROCESANDO
+        COMPLETADA
+        RECHAZADA
+        REVERTIDA
+    }
+    enum TipoCuenta {
+        CORRIENTE
+        AHORROS
+        CREDITO
+    }
+    enum Turno {
+        MAÑANA
+        TARDE
+        NOCHE
+    }
+    enum TipoDocumento {
+        CEDULA
+        PASAPORTE
+        NIT
+        CEDULA_EXTRANJERIA
+    }
+}
+
+package "modelo.excepciones" {
+    class SistemaBancarioException {
+        - codigoError: String
+        - timestamp: LocalDateTime
+        + getCodigoError(): String
+        + getTimestamp(): LocalDateTime
+    }
+    class SaldoInsuficienteException {
+        - saldoActual: double
+        - montoSolicitado: double
+        + getSaldoActual(): double
+        + getMontoSolicitado(): double
+    }
+    class CuentaBloqueadaException
+    class ClienteNoEncontradoException {
+        - idCliente: String
+        + getIdCliente(): String
+    }
+    class CapacidadExcedidaException {
+        - capacidadMaxima: int
+        + getCapacidadMaxima(): int
+    }
+    class BancoRuntimeException
+    class DatoInvalidoException {
+        - campo: String
+        - valorRecibido: Object
+        + getCampo(): String
+        + getValorRecibido(): Object
+    }
+    class EstadoTransaccionInvalidoException
+    class PermisoInsuficienteException
+
+    SistemaBancarioException <|-- SaldoInsuficienteException
+    SistemaBancarioException <|-- CuentaBloqueadaException
+    SistemaBancarioException <|-- ClienteNoEncontradoException
+    SistemaBancarioException <|-- CapacidadExcedidaException
+    BancoRuntimeException <|-- DatoInvalidoException
+    BancoRuntimeException <|-- EstadoTransaccionInvalidoException
+    BancoRuntimeException <|-- PermisoInsuficienteException
+}
+
+package "modelo.abstractas" {
+    abstract class Persona {
+        - id: String
+        - nombre: String
+        - apellido: String
+        - fechaNacimiento: LocalDate
+        - email: String
+        + getNombreCompleto(): String
+        + {abstract} calcularEdad(): int
+        + {abstract} obtenerTipo(): String
+        + {abstract} obtenerDocumentoIdentidad(): String
+    }
+    abstract class Empleado {
+        - legajo: String
+        - fechaContratacion: LocalDate
+        - salarioBase: double
+        - activo: boolean
+        + calcularAntigüedad(): int
+        + {abstract} calcularSalario(): double
+        + {abstract} calcularBono(): double
+    }
+    abstract class Cuenta {
+        - numeroCuenta: String
+        - saldo: double
+        - bloqueada: boolean
+        - historial: Transaccion[20]
+        + verificarBloqueada(): void
+        + agregarAlHistorial(t: Transaccion): void
+        + getHistorial(): Transaccion[]
+        + {abstract} calcularInteres(): double
+        + {abstract} getLimiteRetiro(): double
+        + {abstract} getTipoCuenta(): String
+    }
+
+    Persona <|-- Empleado
+}
+
+package "modelo.empleados" {
+    class Cajero {
+        - turno: Turno
+        - sucursalAsignada: String
+        - transaccionesDia: int
+        + calcularSalario(): double
+        + calcularBono(): double
+    }
+    class AsesorFinanciero {
+        - comisionBase: double
+        - metasMensuales: double
+        - clientesAsignados: Persona[20]
+        + calcularSalario(): double
+        + calcularBono(): double
+    }
+    class GerenteSucursal {
+        - sucursal: String
+        - presupuestoAnual: double
+        - empleadosACargo: Empleado[30]
+        + calcularSalario(): double
+        + calcularBono(): double
+        + aprobarCredito(monto: double): void
+    }
+
+    Empleado <|-- Cajero
+    Empleado <|-- AsesorFinanciero
+    Empleado <|-- GerenteSucursal
+
+    Cajero ..|> Consultable
+    Cajero ..|> Auditable
+    AsesorFinanciero ..|> Consultable
+    AsesorFinanciero ..|> Auditable
+    GerenteSucursal ..|> Consultable
+    GerenteSucursal ..|> Auditable
+}
+
+package "modelo.personas" {
+    class ClienteNatural {
+        - tipoDocumento: TipoDocumento
+        - numeroDocumento: String
+        - cuentas: Cuenta[5]
+        + agregarCuenta(c: Cuenta): void
+        + getCuentas(): Cuenta[]
+    }
+    class ClienteEmpresarial {
+        - nit: String
+        - razonSocial: String
+        - representanteLegal: String
+        - cuentas: Cuenta[5]
+        + agregarCuenta(c: Cuenta): void
+        + getCuentas(): Cuenta[]
+    }
+
+    Persona <|-- ClienteNatural
+    Persona <|-- ClienteEmpresarial
+
+    ClienteNatural ..|> Consultable
+    ClienteNatural ..|> Notificable
+    ClienteNatural ..|> Auditable
+    ClienteEmpresarial ..|> Consultable
+    ClienteEmpresarial ..|> Notificable
+    ClienteEmpresarial ..|> Auditable
+}
+
+package "modelo.cuentas" {
+    class CuentaAhorros {
+        - tasaInteres: double
+        - retirosMesActual: int
+        - maxRetirosMes: int
+        + calcularInteres(): double
+        + depositar(monto: double): void
+        + retirar(monto: double): void
+    }
+    class CuentaCorriente {
+        - montoSobregiro: double
+        - comisionMantenimiento: double
+        + calcularInteres(): double
+        + depositar(monto: double): void
+        + retirar(monto: double): void
+    }
+    class CuentaCredito {
+        - limiteCredito: double
+        - tasaInteres: double
+        - deudaActual: double
+        + calcularInteres(): double
+        + depositar(monto: double): void
+        + retirar(monto: double): void
+    }
+
+    Cuenta <|-- CuentaAhorros
+    Cuenta <|-- CuentaCorriente
+    Cuenta <|-- CuentaCredito
+
+    CuentaAhorros ..|> Consultable
+    CuentaAhorros ..|> Transaccionable
+    CuentaAhorros ..|> Auditable
+    CuentaCorriente ..|> Consultable
+    CuentaCorriente ..|> Transaccionable
+    CuentaCorriente ..|> Auditable
+    CuentaCredito ..|> Consultable
+    CuentaCredito ..|> Transaccionable
+    CuentaCredito ..|> Auditable
+}
+
+package "modelo.banco" {
+    class Banco {
+        - nombre: String
+        - empleados: Empleado[50]
+        - clientes: Persona[200]
+        - cuentas: Cuenta[500]
+        + registrarCliente(c: Persona): void
+        + registrarEmpleado(e: Empleado): void
+        + abrirCuenta(idCliente: String, c: Cuenta): void
+        + buscarCliente(id: String): Persona
+        + calcularNominaTotal(): double
+        + calcularInteresesMensuales(): void
+    }
+    class Transaccion {
+        - id: String
+        - monto: double
+        - estado: EstadoTransaccion
+        - fecha: LocalDateTime
+        - descripcion: String
+        + cambiarEstado(nuevo: EstadoTransaccion): void
+        + generarComprobante(): String
+    }
+
+    Banco ..|> Auditable
+    Banco "1" o-- "0..200" Persona
+    Banco "1" o-- "0..50" Empleado
+    Banco "1" o-- "0..500" Cuenta
+    Transaccion "0..20" --o "1" Cuenta
+    Transaccion --> EstadoTransaccion
+}
+
+@enduml
